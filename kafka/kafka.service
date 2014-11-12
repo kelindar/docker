@@ -5,7 +5,7 @@ Description=kafka
 Type=simple
 EnvironmentFile=/etc/environment
 Environment="TAG=0.8.1.1"
-Environment="ENV=test"
+Environment="ENV=prod"
 # ExecStartPre=-/usr/bin/docker pull misakai/kafka:${TAG}
 ExecStart=/usr/bin/docker run --rm \
                               --name kafka \

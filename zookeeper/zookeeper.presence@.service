@@ -9,7 +9,7 @@ Restart=always
 RestartSec=30
 
 EnvironmentFile=/etc/environment
-Environment="ENV=test"
+Environment="ENV=prod"
 Environment="ZOOKEEPER_CLIENT_PORT=2181"
 Environment="ZOOKEEPER_LEADER_PORT=2888"
 Environment="ZOOKEEPER_LEADER_ELECTION_PORT=3888"
@@ -29,12 +29,12 @@ ExecStartPre=/usr/bin/etcdctl set --ttl 60 /skydns/local/cluster/${ENV}/_tcp/_zo
 
 ExecStart=/usr/bin/printf "Announced\n"
 
-# zookeeper-1.test.cluster.local
-# 1.zookeeper.test.cluster.local
-# zookeeper.test.cluster.local -> round-robin
-# _zookeeper._tcp.test.cluster.local 2181
-# _zookeeper-leader._tcp.test.cluster.local 2888
-# _zookeeper-leader-election._tcp.test.cluster.local 3888
+# zookeeper-1.prod.cluster.local
+# 1.zookeeper.prod.cluster.local
+# zookeeper.prod.cluster.local -> round-robin
+# _zookeeper._tcp.prod.cluster.local 2181
+# _zookeeper-leader._tcp.prod.cluster.local 2888
+# _zookeeper-leader-election._tcp.prod.cluster.local 3888
 
 [X-Fleet]
 MachineOf=zookeeper@%i.service
