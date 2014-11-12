@@ -6,16 +6,19 @@ Type=simple
 EnvironmentFile=/etc/environment
 Environment="TAG=3.4.5"
 Environment="ENV=prod"
+Environment="INSTANCE_ID=zk%i"
 ExecStart=/usr/bin/docker run --rm \
                               --name zookeeper-%i \
                               --env ZK_SERVER_NUMBER=%i \
-                              --hostname zookeeper-%i.${ENV}.cluster.local \
-                              --dns-search ${ENV}.cluster.local \
+                              --hostname zk${INSTANCE_ID}.emitter.io \
                               --publish 2181:2181 \
                               --publish 2888:2888 \
                               --publish 3888:3888 \
                               misakai/zookeeper:latest
 
+ExecStartPost=/usr/bin/etcdctl set /lbManager/route53/us-east-1/emitter.io/single/$INSTANCE_ID
+
+ExecStop=/usr/bin/etcdctl rm /lbManager/route53/us-east-1/emitter.io/single/$INSTANCE_ID
 ExecStop=/usr/bin/docker stop zookeeper-%i
 
 [X-Fleet]
