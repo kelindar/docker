@@ -1,0 +1,21 @@
+[Unit]
+Description=kafka
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/environment
+Environment="TAG=0.8.1.1"
+Environment="ENV=test"
+# ExecStartPre=-/usr/bin/docker pull emmanuel/kafka:${TAG}
+ExecStart=/usr/bin/docker run --rm \
+                              --name kafka \
+                              --env KAFKA_SERVER_NUMBER=%i \
+                              --hostname kafka-%i.${ENV}.cluster.local \
+                              --dns-search ${ENV}.cluster.local \
+                              --publish 9092:9092 \
+                              emmanuel/kafka:${TAG}
+
+ExecStop=/usr/bin/docker stop kafka
+
+[X-Fleet]
+X-Conflicts=kafka@*.service
