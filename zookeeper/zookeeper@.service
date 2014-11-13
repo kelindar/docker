@@ -6,7 +6,7 @@ EnvironmentFile=/etc/environment
 Environment="TAG=3.4.5"
 Environment="ENV=prod"
 ExecStartPre=/bin/bash -c "curl 'http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip' -H 'X-Google-Metadata-Request: True' > /etc/PUBLIC_IP"
-ExecStartPre=/bin/bash -c "curl 'http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/internal-ip' -H 'X-Google-Metadata-Request: True' > /etc/PRIVATE_IP"
+ExecStartPre=/bin/bash -c "curl 'http://metadata/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'X-Google-Metadata-Request: True' > /etc/PRIVATE_IP"
 ExecStart=/usr/bin/docker run --rm \
                               --name zookeeper-%i \
                               --env ZK_SERVER_NUMBER=%i \
