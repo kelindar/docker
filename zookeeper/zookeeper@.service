@@ -16,9 +16,7 @@ ExecStart=/usr/bin/docker run --rm \
                               --publish 3888:3888 \
                               misakai/zookeeper:latest
 ExecStartPost=/bin/bash -c "IP=$(</etc/PUBLIC_IP);/usr/bin/etcdctl set /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.emitter.io/single/$IP ''"
-ExecStartPost=/bin/bash -c "IP=$(</etc/PRIVATE_IP);/usr/bin/etcdctl set /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.local.emitter.io/single/$IP ''"
 ExecStop=/bin/bash -c "IP=$(</etc/PUBLIC_IP);/usr/bin/etcdctl rm /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.emitter.io/single/$IP ''"
-ExecStop=/bin/bash -c "IP=$(</etc/PRIVATE_IP);/usr/bin/etcdctl rm /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.local.emitter.io/single/$IP ''"
 ExecStop=/usr/bin/docker stop zookeeper-%i
 [X-Fleet]
 X-Conflicts=zookeeper@*.service
