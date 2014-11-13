@@ -1,7 +1,7 @@
-FROM misakai/ubuntu
+FROM phusion/baseimage:0.9.13
 MAINTAINER Roman Atachiants <roman@misakai.com>
 
-ENV DEBIAN_FRONTEND noninteractive
+#ENV DEBIAN_FRONTEND noninteractive
 
 # Install dependencies
 RUN apt-get update -q -y && \
