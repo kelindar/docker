@@ -6,14 +6,13 @@ Type=simple
 EnvironmentFile=/etc/environment
 Environment="TAG=0.8.1.1"
 Environment="ENV=prod"
-# ExecStartPre=-/usr/bin/docker pull misakai/kafka:${TAG}
 ExecStart=/usr/bin/docker run --rm \
                               --name kafka \
                               --env KAFKA_SERVER_NUMBER=%i \
                               --hostname kafka-%i.${ENV}.cluster.local \
                               --dns-search ${ENV}.cluster.local \
                               --publish 9092:9092 \
-                              misakai/kafka:${TAG}
+                              misakai/kafka
 
 ExecStop=/usr/bin/docker stop kafka
 
