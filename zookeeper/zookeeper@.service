@@ -1,25 +1,24 @@
 [Unit]
 Description=zookeeper
-
 [Service]
 Type=simple
 EnvironmentFile=/etc/environment
 Environment="TAG=3.4.5"
 Environment="ENV=prod"
-Environment="INSTANCE_ID=zk%i"
+ExecStartPre=/bin/bash -c "curl 'http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip' -H 'X-Google-Metadata-Request: True' > /etc/PUBLIC_IP"
+ExecStartPre=/bin/bash -c "curl 'http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/internal-ip' -H 'X-Google-Metadata-Request: True' > /etc/PRIVATE_IP"
 ExecStart=/usr/bin/docker run --rm \
                               --name zookeeper-%i \
                               --env ZK_SERVER_NUMBER=%i \
-                              --hostname zk${INSTANCE_ID}.emitter.io \
+                              --hostname zk%i.emitter.io \
                               --publish 2181:2181 \
                               --publish 2888:2888 \
                               --publish 3888:3888 \
                               misakai/zookeeper:latest
-
-ExecStartPost=/usr/bin/etcdctl set /lbManager/route53/us-east-1/emitter.io/single/$INSTANCE_ID
-
-ExecStop=/usr/bin/etcdctl rm /lbManager/route53/us-east-1/emitter.io/single/$INSTANCE_ID
+ExecStartPost=/bin/bash -c "IP=$(</etc/PUBLIC_IP);/usr/bin/etcdctl set /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.emitter.io/single/$IP ''"
+ExecStartPost=/bin/bash -c "IP=$(</etc/PRIVATE_IP);/usr/bin/etcdctl set /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.local.emitter.io/single/$IP ''"
+ExecStop=/bin/bash -c "IP=$(</etc/PUBLIC_IP);/usr/bin/etcdctl rm /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.emitter.io/single/$IP ''"
+ExecStop=/bin/bash -c "IP=$(</etc/PRIVATE_IP);/usr/bin/etcdctl rm /lbManager/route53/us-east-1/Z3V3T0846QQWX/zk%i.local.emitter.io/single/$IP ''"
 ExecStop=/usr/bin/docker stop zookeeper-%i
-
 [X-Fleet]
 X-Conflicts=zookeeper@*.service
