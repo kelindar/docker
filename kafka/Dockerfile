@@ -8,7 +8,7 @@ ENV KAFKA_RELEASE $KAFKA_SCALA_VERSION-$KAFKA_VERSION
 ENV KAFKA_HOME /opt/kafka_$KAFKA_RELEASE
 
 ADD http://www.eu.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$KAFKA_RELEASE.tgz /opt/
-RUN tar zxvf /opt/kafka_$KAFKA_RELEASE.tgz /opt/
+RUN tar zxvf /opt/kafka_$KAFKA_RELEASE.tgz -C /opt/
 
 ADD server.properties $KAFKA_HOME/config/server.properties
 ADD start.sh /start.sh
