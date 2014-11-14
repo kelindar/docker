@@ -2,7 +2,7 @@
 
 First, we need to spin a cluster of kafka and bootstrap it. On Google Compute Engine, we can spin a cluster in the following way:
 ```
-gcloud compute instances create kafka-1 kafka-2 --image coreos --zone europe-west1-b --machine-type n1-highmem-2 --metadata-from-file user-data=coreos-gcloud.yaml --tags zookeeper --network emitter-bus --boot-disk-type pd-ssd --boot-disk-size 50GB
+gcloud compute instances create kafka-1 kafka-2 --image coreos --zone europe-west1-b --machine-type n1-highmem-2 --metadata-from-file user-data=coreos-gcloud.yaml --tags kafka --network emitter-bus --boot-disk-type pd-ssd --boot-disk-size 50GB
 ```
 
 For CoreOS we should provide a cloud-config file. In the command above we named it *coreos-gcloud.yaml*:

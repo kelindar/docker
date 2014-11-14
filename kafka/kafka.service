@@ -6,14 +6,16 @@ Type=simple
 EnvironmentFile=/etc/environment
 Environment="TAG=0.8.1.1"
 Environment="ENV=prod"
+ExecStartPre=/bin/bash -c "curl 'http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip' -H 'X-Google-Metadata-Request: True' > /etc/PUBLIC_IP"
+ExecStartPre=/bin/bash -c "curl 'http://metadata/computeMetadata/v1/instance/network-interfaces/0/ip' -H 'X-Google-Metadata-Request: True' > /etc/PRIVATE_IP"
 ExecStart=/usr/bin/docker run --rm \
                               --name kafka \
                               --env KAFKA_SERVER_NUMBER=%i \
-                              --hostname kafka-%i.${ENV}.cluster.local \
-                              --dns-search ${ENV}.cluster.local \
+                              --hostname m%i.emitter.io \
                               --publish 9092:9092 \
                               misakai/kafka
-
+ExecStartPost=/bin/bash -c "IP=$(</etc/PUBLIC_IP);/usr/bin/etcdctl set /lbManager/route53/us-east-1/Z3V3T0846QQWX/m%i.emitter.io/single/$IP ''"
+ExecStop=/bin/bash -c "IP=$(</etc/PUBLIC_IP);/usr/bin/etcdctl rm /lbManager/route53/us-east-1/Z3V3T0846QQWX/m%i.emitter.io/single/$IP ''"
 ExecStop=/usr/bin/docker stop kafka
 
 [X-Fleet]
