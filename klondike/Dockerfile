@@ -9,8 +9,9 @@ RUN apt-get update -q -y && \
     	mono-xsp2-base \
     	unzip
 
-# Setup lbManager runit service
+# Load Klondike
 RUN mkdir -p /etc/service/lbManager
 ADD https://github.com/themotleyfool/Klondike/releases/download/v1.6.2/Klondike-Release-1.6.2.zip /tmp/
 RUN unzip /tmp/Klondike-Release-1.6.2.zip
-RUN mv /tmp/Klondike-Release-1.6.2 /tmp/klondike
+RUN mkdir /web
+RUN mv /Klondike-Release-1.6.2 /web
