@@ -59,12 +59,15 @@
       "Type": "String",
       "Description": "Security group to launch instances into. (it must exist, it won't be created.)"
     },
-    "SubnetId" : {
+    "SubnetA" : {
       "Description" : "VPC group to launch instances into. (it must exist, it won't be created.)",
       "Type" : "String",
-      "Default" : "subnet-c4a416b3",
-      "AllowedValues" : [ "subnet-c4a416b3", "subnet-53d04536"],
-      "ConstraintDescription" : "Must be a valid subnet identifier."
+      "Default" : "subnet-c4a416b3"
+    },
+    "SubnetB" : {
+      "Description" : "VPC group to launch instances into. (it must exist, it won't be created.)",
+      "Type" : "String",
+      "Default" : "subnet-53d04536"
     },
     "ClusterSize": {
       "Default": "2",
@@ -94,37 +97,12 @@
     }
   },
   "Resources": {
-    "CoreOSSecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": "CoreOS SecurityGroup",
-        "SecurityGroupIngress": [
-          {"IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": {"Ref": "AllowSSHFrom"}}
-        ]
-      }
-    },
-    "Ingress4001": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
-      "Properties": {
-        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "4001", "ToPort": "4001", "SourceSecurityGroupId": {
-          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
-        }
-      }
-    },
-    "Ingress7001": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
-      "Properties": {
-        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "7001", "ToPort": "7001", "SourceSecurityGroupId": {
-          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
-        } 
-      }
-    },
     "CoreOSServerAutoScale": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
-        "AvailabilityZones": {"Fn::GetAZs": ""},
+        "AvailabilityZones": [ "eu-west-1a", "eu-west-1b"],
         "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
-        "VPCZoneIdentifier": [{"Ref":"SubnetId"}],
+        "VPCZoneIdentifier": [{"Ref":"SubnetA"}, {"Ref":"SubnetB"}],
         "MinSize": "2",
         "MaxSize": "12",
         "DesiredCapacity": {"Ref": "ClusterSize"},
@@ -139,7 +117,7 @@
         "ImageId" : { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI" ]},
         "InstanceType": {"Ref": "InstanceType"},
         "KeyName": {"Ref": "KeyPair"},
-        "SecurityGroups": [{"Ref": "CoreOSSecurityGroup"}],
+        "SecurityGroups": [{"Ref": "SecurityGroupId"}],
         "UserData" : { "Fn::Base64":
           { "Fn::Join": [ "", [
             "#cloud-config\n\n",
