@@ -1,0 +1,180 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Misakai CoreOS Cluster for EC2: http://coreos.com/docs/running-coreos/cloud-providers/ec2/",
+  "Mappings" : {
+      "RegionMap" : {
+
+          "eu-central-1" : {
+              "AMI" : "ami-3a093a27"
+          },
+
+          "ap-northeast-1" : {
+              "AMI" : "ami-e4465fe5"
+          },
+
+          "sa-east-1" : {
+              "AMI" : "ami-7d863a60"
+          },
+
+          "ap-southeast-2" : {
+              "AMI" : "ami-d97d09e3"
+          },
+
+          "ap-southeast-1" : {
+              "AMI" : "ami-3c8da66e"
+          },
+
+          "us-east-1" : {
+              "AMI" : "ami-3415525c"
+          },
+
+          "us-west-2" : {
+              "AMI" : "ami-6f134b5f"
+          },
+
+          "us-west-1" : {
+              "AMI" : "ami-bcbfa6f9"
+          },
+
+          "eu-west-1" : {
+              "AMI" : "ami-79f27e0e"
+          }
+
+      }
+  },
+  "Parameters": {
+    "ClusterName": {
+      "Default" : "web",
+      "Description": "The cluster name for Amazon EC2 Container Service",
+      "Type": "String"
+    },
+    "InstanceType" : {
+      "Description" : "EC2 HVM instance type (m3.medium, etc).",
+      "Type" : "String",
+      "Default" : "m3.medium",
+      "ConstraintDescription" : "Must be a valid EC2 HVM instance type."
+    },
+    "SecurityGroupId":{
+      "Default" : "sg-ee412c8b",
+      "Type": "String",
+      "Description": "Security group to launch instances into. (it must exist, it won't be created.)"
+    },
+    "SubnetId" : {
+      "Description" : "VPC group to launch instances into. (it must exist, it won't be created.)",
+      "Type" : "String",
+      "Default" : "subnet-c4a416b3",
+      "AllowedValues" : [ "subnet-c4a416b3", "subnet-53d04536"],
+      "ConstraintDescription" : "Must be a valid subnet identifier."
+    },
+    "ClusterSize": {
+      "Default": "2",
+      "MinValue": "2",
+      "MaxValue": "12",
+      "Description": "Number of nodes in cluster (2-12).",
+      "Type": "Number"
+    },
+    "DiscoveryURL": {
+      "Description": "An unique etcd cluster discovery URL. Grab a new token from https://discovery.etcd.io/new",
+      "Type": "String"
+    },
+    "AdvertisedIPAddress": {
+      "Description": "Use 'private' if your etcd cluster is within one region or 'public' if it spans regions or cloud providers.",
+      "Default": "private",
+      "AllowedValues": ["private", "public"],
+      "Type": "String"
+    },
+    "AllowSSHFrom": {
+      "Description": "The net block (CIDR) that SSH is available to.",
+      "Default": "0.0.0.0/0",
+      "Type": "String"
+    },
+    "KeyPair" : {
+      "Description" : "The name of an EC2 Key Pair to allow SSH access to the instance.",
+      "Type" : "String"
+    }
+  },
+  "Resources": {
+    "CoreOSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "CoreOS SecurityGroup",
+        "SecurityGroupIngress": [
+          {"IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": {"Ref": "AllowSSHFrom"}}
+        ]
+      }
+    },
+    "Ingress4001": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "4001", "ToPort": "4001", "SourceSecurityGroupId": {
+          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
+        }
+      }
+    },
+    "Ingress7001": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupName": {"Ref": "CoreOSSecurityGroup"}, "IpProtocol": "tcp", "FromPort": "7001", "ToPort": "7001", "SourceSecurityGroupId": {
+          "Fn::GetAtt" : [ "CoreOSSecurityGroup", "GroupId" ] 
+        } 
+      }
+    },
+    "CoreOSServerAutoScale": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": {"Fn::GetAZs": ""},
+        "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
+        "VPCZoneIdentifier": [{"Ref":"SubnetId"}],
+        "MinSize": "2",
+        "MaxSize": "12",
+        "DesiredCapacity": {"Ref": "ClusterSize"},
+        "Tags": [
+            {"Key": "Name", "Value": { "Ref" : "AWS::StackName" }, "PropagateAtLaunch": true}
+        ]
+      }
+    },
+    "CoreOSServerLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId" : { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI" ]},
+        "InstanceType": {"Ref": "InstanceType"},
+        "KeyName": {"Ref": "KeyPair"},
+        "SecurityGroups": [{"Ref": "CoreOSSecurityGroup"}],
+        "UserData" : { "Fn::Base64":
+          { "Fn::Join": [ "", [
+            "#cloud-config\n\n",
+            "coreos:\n",
+            "  etcd:\n",
+            "    discovery: ", { "Ref": "DiscoveryURL" }, "\n",
+            "    addr: $", { "Ref": "AdvertisedIPAddress" }, "_ipv4:4001\n",
+            "    peer-addr: $", { "Ref": "AdvertisedIPAddress" }, "_ipv4:7001\n",
+            "  units:\n",
+            "    - name: etcd.service\n",
+            "      command: start\n",
+
+            "    - name: fleet.service\n",
+            "      command: start\n",
+
+            "    - name: amazon-ecs-agent.service\n",
+            "      command: start\n",
+            "      runtime: true\n",
+            "      content: |\n",
+            "         [Unit]\n",
+            "         Description=Amazon ECS Agent\n",
+            "         After=docker.service\n",
+            "         Requires=docker.service\n",
+            "         [Service]\n",
+            "         Environment=ECS_CLUSTER=", { "Ref": "ClusterName" }, "\n",
+            "         Environment=ECS_LOGLEVEL=warn\n",
+            "         ExecStartPre=-/usr/bin/docker kill ecs-agent\n",
+            "         ExecStartPre=-/usr/bin/docker rm ecs-agent\n",
+            "         ExecStartPre=/usr/bin/docker pull amazon/amazon-ecs-agent\n",
+            "         ExecStart=/usr/bin/docker run --name ecs-agent --env=ECS_CLUSTER=${ECS_CLUSTER} --env=ECS_LOGLEVEL=${ECS_LOGLEVEL} --publish=127.0.0.1:51678:51678 --volume=/var/run/docker.sock:/var/run/docker.sock amazon/amazon-ecs-agent\n",
+            "         ExecStop=/usr/bin/docker stop ecs-agent\n"
+            ] ]
+          }
+        }
+      }
+    }
+  }
+}
